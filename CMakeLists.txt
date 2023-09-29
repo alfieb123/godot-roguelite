@@ -36,11 +36,23 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
     endif()
 endif()
 
-project(roguelite LANGUAGES C CXX)
+project(fantapants LANGUAGES C CXX)
 set(gdextension_lib_name ${PROJECT_NAME})
 
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" host_os)
-set(VCPKG_TARGET_TRIPLET "x64-${host_os}-static")
+
+# swapped this line for an if so that we get arm64 for apple
+# set(VCPKG_TARGET_TRIPLET "x64-${host_os}-static")
+if(APPLE)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+        set(VCPKG_TARGET_TRIPLET "arm64-${host_os}-static")
+    else()
+        set(VCPKG_TARGET_TRIPLET "x64-${host_os}-static")
+    endif()
+else()
+    set(VCPKG_TARGET_TRIPLET "x64-${host_os}-static")
+endif()
+
 
 # needs to be >= C++17
 set(CMAKE_CXX_STANDARD 23)
@@ -97,7 +109,13 @@ else()
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             COMMAND_ERROR_IS_FATAL ANY
         )
-    elseif(UNIX)
+    elseif(APPLE)
+        execute_process(
+            COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/extern/vcpkg/bootstrap-vcpkg.sh"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    elseif(UNIX) 
         execute_process(
             COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/extern/vcpkg/bootstrap-vcpkg.sh"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -149,32 +167,65 @@ set(godot_debug_editor_executable
 
 message(NOTICE "godot_debug_editor_executable = ${godot_debug_editor_executable}")
 
-# if the engine/editor executable isn't found in the
-# engine's submodule bin folder, invoke the scons build.
+# ---- COMMENTED and swapped for apple silicon option! ----
+# # if the engine/editor executable isn't found in the
+# # engine's submodule bin folder, invoke the scons build.
+# if(NOT EXISTS "${godot_debug_editor_executable}")
+#     message("Godot engine debug binaries not found, invoking debug build of engine...")
+#
+#     execute_process(
+#         COMMAND scons platform=${host_os} arch=x64 target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no --clean
+#         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/godot-engine"
+#         COMMAND_ERROR_IS_FATAL ANY
+#     )
+#
+#     # this build should only ever need to be run once (unless the enging debug binaries
+#     # are deleted or you want to change the build configuration/command invoked below).
+#     execute_process(
+#         COMMAND scons platform=${host_os} arch=x64 target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no use_lto=no
+#         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/godot-engine"
+#         COMMAND_ERROR_IS_FATAL ANY
+#     )
+#
+#     # not necessary, the temp file in here just confuses Visual Studio
+#     file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}}/extern/godot-engine/.sconf_temp")
+#
+#     if(NOT EXISTS "${godot_debug_editor_executable}")
+#         message(FATAL_ERROR "Couldn't find godot debug executable after scons build: ${godot_debug_editor_executable}")
+#     endif()
+# endif()
+if(APPLE)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+        set(ARCHITECTURE "arm64")
+    else()
+        set(ARCHITECTURE "x64")
+    endif()
+else()
+    set(ARCHITECTURE "x64")
+endif()
+
 if(NOT EXISTS "${godot_debug_editor_executable}")
     message("Godot engine debug binaries not found, invoking debug build of engine...")
 
     execute_process(
-        COMMAND scons platform=${host_os} arch=x64 target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no --clean
+        COMMAND scons platform=${host_os} arch=${ARCHITECTURE} target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no --clean
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/godot-engine"
         COMMAND_ERROR_IS_FATAL ANY
     )
 
-    # this build should only ever need to be run once (unless the enging debug binaries
-    # are deleted or you want to change the build configuration/command invoked below).
     execute_process(
-        COMMAND scons platform=${host_os} arch=x64 target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no use_lto=no
+        COMMAND scons platform=${host_os} arch=${ARCHITECTURE} target=editor use_static_cpp=yes dev_build=yes debug_symbols=yes optimize=none use_lto=no
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/godot-engine"
         COMMAND_ERROR_IS_FATAL ANY
     )
 
-    # not necessary, the temp file in here just confuses Visual Studio
-    file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}}/extern/godot-engine/.sconf_temp")
+    file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/extern/godot-engine/.sconf_temp")
 
     if(NOT EXISTS "${godot_debug_editor_executable}")
         message(FATAL_ERROR "Couldn't find godot debug executable after scons build: ${godot_debug_editor_executable}")
     endif()
 endif()
+
 
 # =======================================================================
 # 3rd party library setup/configuration (leverages vcpkg)
@@ -258,13 +309,13 @@ target_compile_definitions(godot_engine PUBLIC
 # CONFIGURE_DEPENDS here will forcefully invoke a reconfiguration
 # of the project any time the GLOB call results in a different
 # files listing of all sources present within the src/ directory.
-file(GLOB_RECURSE roguelite_sources CONFIGURE_DEPENDS
+file(GLOB_RECURSE fantapants_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.[hc]"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.[hc]pp"
 )
 
 # add the gdextension dynamic library
-add_library(${gdextension_lib_name} SHARED ${roguelite_sources})
+add_library(${gdextension_lib_name} SHARED ${fantapants_sources})
 
 # used below to conditionally set certain compile options depending on the toolset used.
 # taken from godot-cpp's cmakelists.txt for consistency (along with some of the compiler 
