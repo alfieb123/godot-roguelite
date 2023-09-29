@@ -8,7 +8,7 @@
       "installDir": "${sourceDir}/.out/install/${presetName}",
       "binaryDir": "${sourceDir}/.out/build/${presetName}",
       "architecture": {
-        "value": "amd64",
+        "value": "x64",
         "strategy": "external"
       },
       "environment": {
