@@ -29,7 +29,7 @@
       "visualizerFile": "${workspaceFolder}/extern/godot-engine/platform/windows/godot.natvis",
       "internalConsoleOptions": "openOnSessionStart",
       "launchCompleteCommand": "exec-run",
-      "targetArchitecture": "x64",
+      "targetArchitecture": "arm64",
       "externalConsole": false,
       "symbolLoadInfo": {
         "loadAll": true,
@@ -64,7 +64,7 @@
       "visualizerFile": "${workspaceFolder}/extern/godot-engine/platform/windows/godot.natvis",
       "internalConsoleOptions": "openOnSessionStart",
       "launchCompleteCommand": "exec-run",
-      "targetArchitecture": "x64",
+      "targetArchitecture": "arm64",
       "externalConsole": false,
       "symbolLoadInfo": {
         "loadAll": true,
